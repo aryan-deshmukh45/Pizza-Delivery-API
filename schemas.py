@@ -31,3 +31,12 @@ class UserResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class Settings(BaseModel):
+    authjwt_secret_key:str='f2b42e76033e7d876c49faa90eea330d6c8022e31b9916f67f630b907f53e6da'
+
+class LoginModel(BaseModel):
+    username:str
+    password:str
+    
+
