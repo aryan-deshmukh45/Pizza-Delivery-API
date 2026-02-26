@@ -23,7 +23,7 @@ class Order(Base):
     ORDER_STATUSES=(
         ('PENDING','pending'),
         ('IN-TRANSIT','in-transit'),
-        ('DELIVERY','delivery')
+        ('DELIVERED','delivered')
     )
 
     PIZZA_SIZES=(
