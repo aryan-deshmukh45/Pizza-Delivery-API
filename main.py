@@ -8,6 +8,14 @@ import re
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
+import stripe 
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+stripe.api=os.getenv("STRIPE_SECRET_KEY")
 
 app = FastAPI()
 

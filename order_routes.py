@@ -5,6 +5,9 @@ from models import User, Order
 from schemas import OrderModel,OrderStatusModel
 from database import Session,engine
 from fastapi.encoders import jsonable_encoder
+import stripe
+from fastapi import Request
+
 
 order_router=APIRouter(
     prefix="/orders",
@@ -256,3 +259,61 @@ async def delete_an_order(id:int, Authorize:AuthJWT=Depends()):
     session.delete(order_to_delete)
     session.commit()
     return order_to_delete
+
+
+@order_router.post('/order')
+async def place_an_order(order: OrderModel, Authorize: AuthJWT = Depends()):
+
+    try:
+        Authorize.jwt_required()
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid Token")
+
+    # Step 1 — Calculate amount
+    price = 500
+    amount = price * order.quantity
+
+    # Step 2 — Create Stripe PaymentIntent
+    payment_intent = stripe.PaymentIntent.create(
+        amount=amount * 100,
+        currency="inr",
+        automatic_payment_methods={"enabled": True},
+    )
+
+    # Step 3 — Save order
+    new_order = Order(
+        pizza_size=order.pizza_size,
+        quantity=order.quantity,
+        stripe_payment_id=payment_intent.id,
+        payment_status="PENDING"
+    )
+
+    session.add(new_order)
+    session.commit()
+    session.refresh(new_order)
+
+    # Step 4 — Return client_secret
+    return {
+        "order_id": new_order.id,
+        "client_secret": payment_intent.client_secret
+    }
+
+
+@order_router.get("/payment/confirm/{order_id}")
+async def confirm_payment(order_id: int):
+
+    order = session.query(Order).filter(Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    payment_intent = stripe.PaymentIntent.retrieve(order.stripe_payment_id)
+
+    if payment_intent.status == "succeeded":
+        order.payment_status = "PAID"
+        order.order_status = "CONFIRMED"
+        session.commit()
+
+        return {"message": "Payment successful"}
+
+    return {"message": "Payment not completed yet"}   

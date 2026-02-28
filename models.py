@@ -2,7 +2,7 @@ from database import Base
 from sqlalchemy import Column,Integer,Boolean,Text,String,ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils.types import ChoiceType
-
+from sqlalchemy import String
 
 
 class User(Base):
@@ -45,4 +45,5 @@ class Order(Base):
         return f"<Order {self.id}>"
 
 
-    
+stripe_payment_id = Column(String, nullable=True)
+payment_status = Column(String, default="PENDING")
